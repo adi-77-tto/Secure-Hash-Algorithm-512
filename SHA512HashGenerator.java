@@ -1,26 +1,36 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.datatransfer.StringSelection;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class SHA512HashGenerator extends JFrame {
 
-    private JTextArea inputTextArea;
-    private JTextArea outputTextArea;
+    private final JTextArea inputTextArea;
+    private final JTextArea outputTextArea;
 
     public SHA512HashGenerator() {
         setTitle("SHA-512 Hash Generator");
-        setSize(650, 400);
+        setSize(760, 520);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
         inputTextArea = new JTextArea(5, 50);
         outputTextArea = new JTextArea(3, 50);
         outputTextArea.setEditable(false);
+        inputTextArea.setLineWrap(true);
+        inputTextArea.setWrapStyleWord(true);
+        outputTextArea.setLineWrap(true);
+        outputTextArea.setWrapStyleWord(true);
+        inputTextArea.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        outputTextArea.setFont(new Font("Consolas", Font.PLAIN, 14));
+        inputTextArea.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        outputTextArea.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
         JButton hashButton = new JButton("Generate SHA-512 Hash");
-        hashButton.setPreferredSize(new Dimension(100, 1));
+        JButton copyButton = new JButton("Copy Hash");
+        styleActionButton(hashButton, new Color(33, 78, 122));
+        styleActionButton(copyButton, new Color(69, 90, 100));
 
         hashButton.addActionListener(e -> {
             String input = inputTextArea.getText();
@@ -29,30 +39,135 @@ public class SHA512HashGenerator extends JFrame {
                 String result = sha.hash(input);
                 outputTextArea.setText(result);
             } else {
-                JOptionPane.showMessageDialog(null, "Please enter some text.");
+                JOptionPane.showMessageDialog(this, "Please enter some text.");
             }
         });
 
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        copyButton.addActionListener(e -> {
+            String hash = outputTextArea.getText().trim();
+            if (!hash.isEmpty()) {
+                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(hash), null);
+            } else {
+                JOptionPane.showMessageDialog(this, "Generate a hash first.");
+            }
+        });
+
+        JLabel titleLabel = new JLabel("SHA-512 Hash Generator", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        titleLabel.setForeground(new Color(242, 245, 248));
+
+        JLabel subtitle = new JLabel("Paste text, generate the digest, and copy it instantly.", SwingConstants.CENTER);
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        subtitle.setForeground(new Color(198, 211, 224));
+
+        JPanel card = new JPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setOpaque(true);
+        card.setBackground(new Color(255, 255, 255, 235));
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(215, 224, 233), 1, true),
+                BorderFactory.createEmptyBorder(18, 18, 18, 18)));
+
+        JLabel inputLabel = new JLabel("Enter your message below:");
+        inputLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        inputLabel.setForeground(new Color(33, 41, 52));
+        inputLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 6, 0));
+
+        JLabel outputLabel = new JLabel("SHA-512 Hash:");
+        outputLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        outputLabel.setForeground(new Color(33, 41, 52));
+        outputLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 6, 0));
 
         JPanel inputPanel = new JPanel(new BorderLayout());
-        inputPanel.add(new JLabel("Enter your message below:"), BorderLayout.NORTH);
-        inputPanel.add(new JScrollPane(inputTextArea), BorderLayout.CENTER);
+        inputPanel.setOpaque(false);
+        inputPanel.add(inputLabel, BorderLayout.NORTH);
+        inputPanel.add(makeScrollPane(inputTextArea), BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 0));
+        buttonPanel.setOpaque(false);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(16, 0, 16, 0));
+        buttonPanel.add(hashButton);
+        buttonPanel.add(copyButton);
 
         JPanel outputPanel = new JPanel(new BorderLayout());
-        outputPanel.add(new JLabel("SHA-512 Hash:"), BorderLayout.NORTH);
-        outputPanel.add(new JScrollPane(outputTextArea), BorderLayout.CENTER);
+        outputPanel.setOpaque(false);
+        outputPanel.add(outputLabel, BorderLayout.NORTH);
+        outputPanel.add(makeScrollPane(outputTextArea), BorderLayout.CENTER);
 
-        panel.add(inputPanel, BorderLayout.NORTH);
-        panel.add(hashButton, BorderLayout.CENTER);
-        panel.add(outputPanel, BorderLayout.SOUTH);
+        card.add(inputPanel);
+        card.add(buttonPanel);
+        card.add(outputPanel);
+
+        JPanel content = new JPanel();
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setOpaque(false);
+        content.add(titleLabel);
+        content.add(Box.createVerticalStrut(6));
+        content.add(subtitle);
+        content.add(Box.createVerticalStrut(18));
+        content.add(card);
+
+        JPanel centerWrap = new JPanel(new GridBagLayout());
+        centerWrap.setOpaque(false);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        centerWrap.add(content, gbc);
+
+        JPanel panel = new GradientPanel();
+        panel.setLayout(new BorderLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(22, 22, 22, 22));
+        panel.add(centerWrap, BorderLayout.CENTER);
 
         add(panel);
     }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new SHA512HashGenerator().setVisible(true));
+    }
+
+    private void styleActionButton(JButton button, Color background) {
+        button.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        button.setBackground(background);
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createEmptyBorder(10, 18, 10, 18));
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        button.setOpaque(true);
+    }
+
+    private JScrollPane makeScrollPane(JTextArea area) {
+        JScrollPane scrollPane = new JScrollPane(area);
+        scrollPane.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(186, 196, 206), 1, true),
+                BorderFactory.createEmptyBorder(0, 0, 0, 0)));
+        scrollPane.getViewport().setBackground(Color.WHITE);
+        return scrollPane;
+    }
+
+    private static class GradientPanel extends JPanel {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            try {
+                g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                GradientPaint paint = new GradientPaint(
+                        0, 0, new Color(16, 28, 46),
+                        0, getHeight(), new Color(38, 63, 99));
+                g2.setPaint(paint);
+                g2.fillRect(0, 0, getWidth(), getHeight());
+
+                g2.setColor(new Color(255, 255, 255, 16));
+                g2.fillOval(getWidth() - 190, -60, 260, 260);
+                g2.fillOval(-90, getHeight() - 160, 220, 220);
+            } finally {
+                g2.dispose();
+            }
+        }
     }
 }
 
@@ -147,13 +262,24 @@ class SHA512 {
             for (int i = 0; i < 80; i++) {
                 long T1 = h + Sigma1(e) + ch(e, f, g) + k[i] + W[i];
                 long T2 = Sigma0(a) + Maj(a, b, c);
-                h = g; g = f; f = e;
+                h = g;
+                g = f;
+                f = e;
                 e = d + T1;
-                d = c; c = b; b = a; a = T1 + T2;
+                d = c;
+                c = b;
+                b = a;
+                a = T1 + T2;
             }
 
-            state[0] += a; state[1] += b; state[2] += c; state[3] += d;
-            state[4] += e; state[5] += f; state[6] += g; state[7] += h;
+            state[0] += a;
+            state[1] += b;
+            state[2] += c;
+            state[3] += d;
+            state[4] += e;
+            state[5] += f;
+            state[6] += g;
+            state[7] += h;
         }
 
         StringBuilder sb = new StringBuilder();
